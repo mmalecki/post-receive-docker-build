@@ -9,6 +9,7 @@ checkout=$(mktemp -d)
 GIT_WORK_TREE=$checkout git checkout -f
 echo "--> Building $project_name to $tag"
 docker build -t $tag $checkout
+rm -rf $checkout
 if [ $? -ne 0 ]; then
   echo '--! Build failed, aborting'
 fi
