@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+[ -f post-receive-docker-buildrc ] && source post-receive-docker-buildrc
+
+project_name=$(basename $(pwd))
+tag="$project_name:$(git log --pretty=format:'%h' -n 1)"
+
+checkout=$(mktemp -d)
+GIT_WORK_TREE=$checkout git checkout -f
+echo "--> Building $project_name to $tag"
+docker build -t $tag $checkout
+if [ $? -ne 0 ]; then
+  echo '--! Build failed, aborting'
+fi
+
+if [ -n $HYPERVISORS ]; then
+  for hypervisor in $HYPERVISORS; do
+    echo "--> Sending image to $hypervisor"
+    docker save $tag | ssh -o StrictHostKeyChecking no $hypervisor docker load
+  done
+fi
